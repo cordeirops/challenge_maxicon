@@ -1,4 +1,4 @@
-package com.desafio.maxicon.currency.service;
+package com.desafio.maxicon.challange.service;
 
 import java.io.IOException;
 import java.net.URI;

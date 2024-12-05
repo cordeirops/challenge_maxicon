@@ -1,4 +1,4 @@
-package com.desafio.maxicon.currency;
+package com.desafio.maxicon.challange;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

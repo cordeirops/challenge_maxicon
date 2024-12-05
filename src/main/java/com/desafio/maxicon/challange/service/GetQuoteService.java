@@ -1,6 +1,6 @@
-package com.desafio.maxicon.currency.service;
+package com.desafio.maxicon.challange.service;
 
-import com.desafio.maxicon.currency.model.Quote;
+import com.desafio.maxicon.challange.model.Quote;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;

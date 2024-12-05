@@ -1,10 +1,9 @@
-package com.desafio.maxicon.currency.model;
+package com.desafio.maxicon.challange.model;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
