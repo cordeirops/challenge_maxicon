@@ -1,4 +1,4 @@
-package com.desafio.maxicon.challange.model;
+package com.desafio.maxicon.challange.model.client;
 
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -14,7 +14,7 @@ public record DataCreateClient(
         String name,
 
         @NotNull
-        int age,
+        Integer age,
 
         @Email
         String email,

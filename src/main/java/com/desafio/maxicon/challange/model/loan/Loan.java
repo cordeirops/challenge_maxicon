@@ -1,9 +1,10 @@
-package com.desafio.maxicon.challange.model;
+package com.desafio.maxicon.challange.model.loan;
 
+import com.desafio.maxicon.challange.model.Currencies;
+import com.desafio.maxicon.challange.model.client.Client;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Date;
 
