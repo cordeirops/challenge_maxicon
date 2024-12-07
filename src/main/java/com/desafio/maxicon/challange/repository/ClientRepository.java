@@ -1,6 +1,6 @@
 package com.desafio.maxicon.challange.repository;
 
-import com.desafio.maxicon.challange.model.client.Client;
+import com.desafio.maxicon.challange.model.persistence.Client;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

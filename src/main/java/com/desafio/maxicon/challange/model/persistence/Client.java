@@ -1,5 +1,6 @@
-package com.desafio.maxicon.challange.model.client;
+package com.desafio.maxicon.challange.model.persistence;
 
+import com.desafio.maxicon.challange.model.dto.ClientDTO;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,14 +20,14 @@ public class Client {
     private String email;
     private String cpf;
 
-    public Client(DataCreateClient data) {
+    public Client(ClientDTO data) {
         this.name = data.name();
         this.age = data.age();
         this.email = data.email();
         this.cpf = data.cpf();
     }
 
-    public void updateClient(DataCreateClient data) {
+    public void updateClient(ClientDTO data) {
         if (data.name() != null){
             this.name = data.name();
         }

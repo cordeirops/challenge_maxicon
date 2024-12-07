@@ -1,7 +1,7 @@
 package com.desafio.maxicon.challange.controller;
 
-import com.desafio.maxicon.challange.model.client.Client;
-import com.desafio.maxicon.challange.model.client.DataCreateClient;
+import com.desafio.maxicon.challange.model.persistence.Client;
+import com.desafio.maxicon.challange.model.dto.ClientDTO;
 import com.desafio.maxicon.challange.repository.ClientRepository;
 import jakarta.validation.Valid;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,7 +19,7 @@ public class ClientController {
 
     @PostMapping
     @Transactional
-    public void createClient (@RequestBody @Valid DataCreateClient data){
+    public void createClient (@RequestBody @Valid ClientDTO data){
         clientRepository.save(new Client(data));
     }
 
@@ -31,7 +31,7 @@ public class ClientController {
 
     @PutMapping
     @Transactional
-    public void editClient(@RequestBody @Valid DataCreateClient data) {
+    public void editClient(@RequestBody @Valid ClientDTO data) {
         var client = clientRepository.getReferenceById(data.id());
         client.updateClient(data);
     }
@@ -40,5 +40,6 @@ public class ClientController {
     public void removeClient(@PathVariable long id) {
         clientRepository.deleteById(id);
     }
+
 
 }
