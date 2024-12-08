@@ -29,8 +29,9 @@ public class LoanPrice {
     private LocalDate date_end;   // Data final do empréstimo
     private int period_n; // Número de parcelas
     private BigDecimal amount_pv; // Valor do financiamento (PV)
+    private BigDecimal ajustedAmount;
     private BigDecimal fees_i; // Taxa de juros (i) como BigDecimal
-    private Currencies currencie;
+    private Currencies currency;
     private BigDecimal ptax; // Taxa adicional
     private BigDecimal pmt; // Valor da parcela (PMT)
     private BigDecimal total_loan; // Valor total do empréstimo
@@ -65,6 +66,12 @@ public class LoanPrice {
         System.out.println("Valor do financiamento: " + amount_pv);
         System.out.println("Taxa de juros: " + fees_i);
         System.out.println("Número de parcelas: " + period_n);
+        System.out.println("PTAX: " + ptax);
+
+        this.ajustedAmount = amount_pv.multiply(ptax);
+
+        //PRECISO QUE O AMOUNT_PV SEJA MULTIPLICADO PELA PTAX
+
 
         // Convertendo a taxa de juros de percentual para decimal (ex: 2% = 0.02)
         BigDecimal i = fees_i.divide(BigDecimal.valueOf(100)); // Convertendo de porcentagem para decimal
@@ -79,13 +86,13 @@ public class LoanPrice {
         }
 
         // Calculando o valor da parcela PMT
-        this.pmt = amount_pv.multiply(numerator).divide(denominator, 2, RoundingMode.HALF_UP); // PMT com arredondamento
+        this.pmt = ajustedAmount.multiply(numerator).divide(denominator, 2, RoundingMode.HALF_UP); // PMT com arredondamento
 
         // Debugging: Exibindo valor da parcela calculada
         System.out.println("Valor da parcela (PMT): " + pmt);
 
         // Calculando as parcelas detalhadas
-        BigDecimal saldoDevedor = amount_pv;
+        BigDecimal saldoDevedor = ajustedAmount;
         for (int k = 1; k <= period_n; k++) {
             BigDecimal interest = saldoDevedor.multiply(i); // Juros da parcela
             BigDecimal amortization = pmt.subtract(interest); // Amortização da parcela

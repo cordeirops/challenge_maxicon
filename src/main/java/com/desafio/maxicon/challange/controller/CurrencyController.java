@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/loans")
+@RequestMapping("/currency")
 public class CurrencyController {
     @Autowired
     private ClientRepository actionClient;

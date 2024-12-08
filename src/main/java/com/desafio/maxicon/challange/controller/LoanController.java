@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/")
+@RequestMapping("/loan")
 public class LoanController {
 
     @PostMapping("/calculate-price")
@@ -20,6 +20,8 @@ public class LoanController {
         loanPrice.setFees_i(dataGetPrice.fees_i());
         loanPrice.setPeriod_n(dataGetPrice.period_n());
         loanPrice.setDate_start(dataGetPrice.date_start());
+        loanPrice.setPtax(dataGetPrice.ptax());
+        loanPrice.setCurrency(dataGetPrice.currency());
         loanPrice.priceCalc();
         return loanPrice;
     }
