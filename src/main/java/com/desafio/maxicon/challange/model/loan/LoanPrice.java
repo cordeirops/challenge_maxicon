@@ -1,9 +1,15 @@
 package com.desafio.maxicon.challange.model.loan;
 
+import com.desafio.maxicon.challange.model.LoanType;
 import com.desafio.maxicon.challange.model.Currencies;
 import com.desafio.maxicon.challange.model.persistence.Client;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
+import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
@@ -16,28 +22,49 @@ import java.util.List;
 @Table(name = "loans")
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class LoanPrice {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "client_id")
+    @ManyToOne
+    @JoinColumn(name = "client_id", nullable = false)
+    @JsonProperty("client_id")
     private Client client;
 
+    @Enumerated(EnumType.STRING)
+    private LoanType loanType;
     private LocalDate date_start; // Data de início do empréstimo
     private LocalDate date_end;   // Data final do empréstimo
     private int period_n; // Número de parcelas
     private BigDecimal amount_pv; // Valor do financiamento (PV)
     private BigDecimal ajustedAmount;
     private BigDecimal fees_i; // Taxa de juros (i) como BigDecimal
+
+    @Enumerated(EnumType.STRING)
     private Currencies currency;
     private BigDecimal ptax; // Taxa adicional
-    private BigDecimal pmt; // Valor da parcela (PMT)
+//    private BigDecimal pmt; // Valor da parcela (PMT)
     private BigDecimal total_loan; // Valor total do empréstimo
+//    private BigDecimal saldoDevedor;
+//    private BigDecimal interest;
+//    private BigDecimal amortization;
 
-    @Transient
-    private List<LoanInstallment> installments = new ArrayList<>(); // Lista de parcelas detalhadas
+    // Relacionamento OneToMany
+    @OneToMany(mappedBy = "loanPrice", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference  // Garante a serialização correta e evita ciclos
+    private List<LoanInstallment> installments = new ArrayList<>();
+
+    public LoanPrice(@Valid DataGetPrice data) {
+    }
+
+    @JsonProperty("client_id")
+    public long getClientId() {
+        return client != null ? client.getId() : 0;
+    }
 
     // Método para calcular a data final com base na data de início e no número de parcelas
     public void calculateEndDate() {
@@ -61,24 +88,27 @@ public class LoanPrice {
             throw new IllegalArgumentException("Taxa de juros deve ser maior que zero.");
         }
 
+
+        this.ajustedAmount = amount_pv.multiply(ptax);
+
+        fees_i = fees_i.divide(BigDecimal.valueOf(100)); // Convertendo de porcentagem para decimal
+
+
         // Debugging: Exibindo valores iniciais
         System.out.println("Cálculo do Empréstimo - Valores iniciais:");
         System.out.println("Valor do financiamento: " + amount_pv);
         System.out.println("Taxa de juros: " + fees_i);
         System.out.println("Número de parcelas: " + period_n);
         System.out.println("PTAX: " + ptax);
-
-        this.ajustedAmount = amount_pv.multiply(ptax);
-
-        //PRECISO QUE O AMOUNT_PV SEJA MULTIPLICADO PELA PTAX
+        System.out.println("TYPE: " + loanType);
+        System.out.println("Client ID: " + client.getId());
 
 
-        // Convertendo a taxa de juros de percentual para decimal (ex: 2% = 0.02)
-        BigDecimal i = fees_i.divide(BigDecimal.valueOf(100)); // Convertendo de porcentagem para decimal
+        if (loanType == LoanType.PRICE){
 
-        BigDecimal onePlusI = BigDecimal.ONE.add(i); // 1 + i
-        BigDecimal numerator = i.multiply(onePlusI.pow(period_n)); // i * (1 + i)^n
-        BigDecimal denominator = onePlusI.pow(period_n).subtract(BigDecimal.ONE); // (1 + i)^n - 1
+        BigDecimal onePlusI = BigDecimal.ONE.add(fees_i); // 1 + fees_i
+        BigDecimal numerator = fees_i.multiply(onePlusI.pow(period_n)); // fees_i * (1 + fees_i)^n
+        BigDecimal denominator = onePlusI.pow(period_n).subtract(BigDecimal.ONE); // (1 + fees_i)^n - 1
 
         // Evitar erro de divisão por zero (caso o denominador seja zero)
         if (denominator.compareTo(BigDecimal.ZERO) == 0) {
@@ -86,20 +116,22 @@ public class LoanPrice {
         }
 
         // Calculando o valor da parcela PMT
-        this.pmt = ajustedAmount.multiply(numerator).divide(denominator, 2, RoundingMode.HALF_UP); // PMT com arredondamento
+        var pmt = ajustedAmount.multiply(numerator).divide(denominator, 2, RoundingMode.HALF_UP); // PMT com arredondamento
 
         // Debugging: Exibindo valor da parcela calculada
         System.out.println("Valor da parcela (PMT): " + pmt);
 
         // Calculando as parcelas detalhadas
-        BigDecimal saldoDevedor = ajustedAmount;
+        var saldoDevedor = ajustedAmount;
         for (int k = 1; k <= period_n; k++) {
-            BigDecimal interest = saldoDevedor.multiply(i); // Juros da parcela
-            BigDecimal amortization = pmt.subtract(interest); // Amortização da parcela
+            var interest = saldoDevedor.multiply(fees_i); // Juros da parcela
+            var amortization = pmt.subtract(interest); // Amortização da parcela
             saldoDevedor = saldoDevedor.subtract(amortization); // Atualiza saldo devedor
 
             // Adiciona os detalhes da parcela à lista
-            installments.add(new LoanInstallment(k, interest, amortization, pmt, saldoDevedor));
+            LoanInstallment installment = new LoanInstallment(null, this, k, interest, amortization, pmt, saldoDevedor);
+            installments.add(installment);  // Adiciona a parcela à lista de parcelas
+
 
             // Debugging: Exibindo detalhes de cada parcela
             System.out.println("Parcela " + k + " - Juros: " + interest + ", Amortização: " + amortization + ", Saldo devedor: " + saldoDevedor);
@@ -113,7 +145,40 @@ public class LoanPrice {
 
         // Calcula a data final após calcular o preço
         calculateEndDate();
-    }
+    } else if (loanType == LoanType.SAC){ //Calcula o método SAC
+           var amortization = this.ajustedAmount.divide(BigDecimal.valueOf(this.period_n), 2, RoundingMode.HALF_UP);
 
+           var saldoDevedor = this.ajustedAmount;
+
+
+            for (int k = 1; k <= period_n; k++) {
+                var interest = saldoDevedor.multiply(fees_i);
+
+                var pmt = amortization.add(interest);
+
+                saldoDevedor = saldoDevedor.subtract(amortization);
+
+                LoanInstallment installment = new LoanInstallment(null, this, k, interest, amortization, pmt, saldoDevedor);
+                installments.add(installment);  // Adiciona a parcela à lista de parcelas
+
+
+                // Debugging: Exibindo detalhes de cada parcela
+                System.out.println("Parcela " + k + " - Juros: " + interest + ", Amortização: " + amortization + ", PMT: " + pmt + ", Saldo Devedor: " + saldoDevedor);
+            }
+
+            // Calcula o valor total do empréstimo (soma de todas as parcelas)
+            this.total_loan = installments.stream().map(LoanInstallment::getInstallmentValue).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            // Debugging: Exibindo valor total do empréstimo
+            System.out.println("Valor total do empréstimo (SAC): " + total_loan);
+
+
+            // Calcula a data final após calcular o preço
+            calculateEndDate();
+
+
+    }
+        }
 
 }
+
