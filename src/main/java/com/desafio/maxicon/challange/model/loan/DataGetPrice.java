@@ -36,6 +36,10 @@ public record DataGetPrice(
         @JoinColumn(name = "client_id", nullable = false)
         Long client_id,
 
+        @ManyToOne
+        @JoinColumn(name = "client_name", nullable = false)
+        String client_name,
+
         List<LoanInstallment> installments,
 
         LocalDate date_end,

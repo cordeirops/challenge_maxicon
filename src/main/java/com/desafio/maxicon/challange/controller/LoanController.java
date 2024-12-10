@@ -2,7 +2,6 @@ package com.desafio.maxicon.challange.controller;
 
 import com.desafio.maxicon.challange.model.Currencies;
 import com.desafio.maxicon.challange.model.LoanType;
-import com.desafio.maxicon.challange.model.dto.ClientDTO;
 import com.desafio.maxicon.challange.model.loan.LoanInstallment;
 import com.desafio.maxicon.challange.model.loan.LoanPrice;
 import com.desafio.maxicon.challange.model.loan.DataGetPrice;
@@ -15,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 
-import javax.xml.crypto.Data;
 import java.util.List;
 
 @RestController
@@ -37,6 +35,12 @@ public class LoanController {
         return List.of(LoanType.values());
     }
 
+
+    @GetMapping("/list-loan")
+    public List<LoanPrice> listLoan() {
+        return loanRepository.findAll();
+    }
+
     @PostMapping("/save-loan")
     @Transactional
     public void saveLoan(@RequestBody @Valid DataGetPrice data) {
@@ -50,7 +54,7 @@ public class LoanController {
 
         // Criando o LoanPrice
         LoanPrice loanPrice = new LoanPrice();
-        loanPrice.setClient(client);  // Associando o cliente ao LoanPrice
+        loanPrice.setClient_id(client);  // Associando o cliente ao LoanPrice
 
         LoanType loanType = LoanType.valueOf(String.valueOf(data.loanType()));
         loanPrice.setLoanType(loanType);
@@ -89,7 +93,7 @@ public class LoanController {
                 .orElseThrow(() -> new IllegalArgumentException("Cliente não encontrado"));
 
         // Setando os dados do cliente e os outros dados da requisição
-        loanPrice.setClient(client);
+        loanPrice.setClient_id(client);
         loanPrice.setLoanType(dataGetPrice.loanType());
         loanPrice.setAmount_pv(dataGetPrice.amount_pv());
         loanPrice.setFees_i(dataGetPrice.fees_i());

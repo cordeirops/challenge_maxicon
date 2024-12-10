@@ -33,7 +33,12 @@ public class LoanPrice {
     @ManyToOne
     @JoinColumn(name = "client_id", nullable = false)
     @JsonProperty("client_id")
-    private Client client;
+    private Client client_id;
+
+    @ManyToOne
+    @JoinColumn(name = "client_name", nullable = false)
+    @JsonProperty("client_name")
+    private Client client_name;
 
     @Enumerated(EnumType.STRING)
     private LoanType loanType;
@@ -63,7 +68,7 @@ public class LoanPrice {
 
     @JsonProperty("client_id")
     public long getClientId() {
-        return client != null ? client.getId() : 0;
+        return client_id != null ? client_id.getId() : 0;
     }
 
     // Método para calcular a data final com base na data de início e no número de parcelas
@@ -101,7 +106,7 @@ public class LoanPrice {
         System.out.println("Número de parcelas: " + period_n);
         System.out.println("PTAX: " + ptax);
         System.out.println("TYPE: " + loanType);
-        System.out.println("Client ID: " + client.getId());
+        System.out.println("Client ID: " + client_id.getId());
 
 
         if (loanType == LoanType.PRICE){
