@@ -1,4 +1,4 @@
-package com.desafio.maxicon.challange.model;
+package com.desafio.maxicon.challange.model.currency;
 
 public enum Currencies {
 

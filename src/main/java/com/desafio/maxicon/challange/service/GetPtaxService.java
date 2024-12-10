@@ -1,6 +1,6 @@
 package com.desafio.maxicon.challange.service;
 
-import com.desafio.maxicon.challange.model.Ptax;
+import com.desafio.maxicon.challange.model.dto.PtaxDTO;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,23 +18,19 @@ public class GetPtaxService {
 
     private ConsumoAPIService consumoAPIService = new ConsumoAPIService();
 
-    public List<Ptax> currencyPtax(String currency, String date) {
-        // Formatar a data no formato MM-dd-yyyy
+    public List<PtaxDTO> currencyPtax(String currency, String date) {
         SimpleDateFormat sdf = new SimpleDateFormat("MM-dd-yyyy");
         Date formattedDate;
         try {
-            formattedDate = sdf.parse(date); // Parse da data fornecida
+            formattedDate = sdf.parse(date);
         } catch (Exception e) {
             throw new RuntimeException("Erro ao formatar a data: " + e.getMessage());
         }
 
-        // Gerando a string da data formatada
         String formattedDateString = sdf.format(formattedDate);
 
-        // Construindo a URL da API com os parâmetros moeda e data
         String uri = String.format("%s@moeda='%s'&@dataCotacao='%s'%s", ENDERECO, currency, formattedDateString, PARAMETROS);
 
-        // Obtendo os dados da API
         String json = consumoAPIService.obterDados(uri);
 
         System.out.println("Requisição para a API: " + uri);
@@ -44,19 +40,16 @@ public class GetPtaxService {
         mapper.configure(com.fasterxml.jackson.core.JsonParser.Feature.ALLOW_COMMENTS, true);
 
         try {
-            // Parse do JSON
             JsonNode result = mapper.readTree(json);
-            JsonNode valueArray = result.path("value");  // Pegando o array "value" do JSON
+            JsonNode valueArray = result.path("value");
 
-            // Verificando se o array "value" existe
             if (valueArray.isArray()) {
-                // Convertendo o JSON para uma lista de objetos Ptax e filtrando pelo tipoBoletim "Fechamento PTAX"
-                List<Ptax> ptaxList = mapper.readValue(valueArray.toString(), new TypeReference<List<Ptax>>() {})
+                List<PtaxDTO> ptaxDTOList = mapper.readValue(valueArray.toString(), new TypeReference<List<PtaxDTO>>() {})
                         .stream()
-                        .filter(ptax -> "Fechamento PTAX".equals(ptax.tipoBoletim()))  // Filtrando pelo tipo "Fechamento PTAX"
+                        .filter(ptaxDTO -> "Fechamento PTAX".equals(ptaxDTO.tipoBoletim()))
                         .collect(Collectors.toList());
-                System.out.println("Resposta JSON: " + ptaxList);
-                return ptaxList;  // Retorna a lista filtrada com apenas os dados de "Fechamento PTAX"
+                System.out.println("Resposta JSON: " + ptaxDTOList);
+                return ptaxDTOList;
             } else {
                 throw new RuntimeException("O array 'value' não foi encontrado na resposta da API.");
             }

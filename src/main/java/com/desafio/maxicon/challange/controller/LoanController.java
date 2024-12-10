@@ -1,14 +1,16 @@
 package com.desafio.maxicon.challange.controller;
 
-import com.desafio.maxicon.challange.model.Currencies;
-import com.desafio.maxicon.challange.model.LoanType;
-import com.desafio.maxicon.challange.model.loan.LoanInstallment;
-import com.desafio.maxicon.challange.model.loan.LoanPrice;
-import com.desafio.maxicon.challange.model.loan.DataGetPrice;
-import com.desafio.maxicon.challange.model.persistence.Client;
+import com.desafio.maxicon.challange.model.currency.Currencies;
+import com.desafio.maxicon.challange.model.loan.LoanType;
+import com.desafio.maxicon.challange.model.dto.InstallmentDTO;
+import com.desafio.maxicon.challange.model.loan.Loan;
+import com.desafio.maxicon.challange.model.dto.LoanDTO;
+import com.desafio.maxicon.challange.model.client.Client;
 import com.desafio.maxicon.challange.repository.ClientRepository;
+import com.desafio.maxicon.challange.repository.InstallmentRepository;
 import com.desafio.maxicon.challange.repository.LoanRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,10 +25,14 @@ public class LoanController {
     @Autowired
     private LoanRepository loanRepository;
 
-    private final ClientRepository clientRepository;  // Vamos injetar o repositório do Cliente
+    @Autowired
+    private final InstallmentRepository installmentRepository;
 
-    // Injeção do repositório ClientRepository via construtor
-    public LoanController(ClientRepository clientRepository) {
+
+    private final ClientRepository clientRepository;
+
+    public LoanController(LoanRepository installmentRepository, InstallmentRepository installmentRepository1, ClientRepository clientRepository) {
+        this.installmentRepository = installmentRepository1;
         this.clientRepository = clientRepository;
     }
 
@@ -37,76 +43,93 @@ public class LoanController {
 
 
     @GetMapping("/list-loan")
-    public List<LoanPrice> listLoan() {
+    public List<Loan> listLoan() {
         return loanRepository.findAll();
     }
 
     @PostMapping("/save-loan")
     @Transactional
-    public void saveLoan(@RequestBody @Valid DataGetPrice data) {
+    public void saveLoan(@RequestBody @Valid LoanDTO data) {
         if (data.client_id() == null) {
             throw new IllegalArgumentException("O client_id não pode ser nulo");
         }
 
-        // Buscando o cliente
         Client client = clientRepository.findById(data.client_id())
                 .orElseThrow(() -> new IllegalArgumentException("Cliente não encontrado"));
 
-        // Criando o LoanPrice
-        LoanPrice loanPrice = new LoanPrice();
-        loanPrice.setClient_id(client);  // Associando o cliente ao LoanPrice
+
+        Loan loan = new Loan();
+        loan.setClient(client);  // Associando o cliente ao LoanPrice
+        loan.setClient_name(client.getName());
 
         LoanType loanType = LoanType.valueOf(String.valueOf(data.loanType()));
-        loanPrice.setLoanType(loanType);
-        loanPrice.setAmount_pv(data.amount_pv());
-        loanPrice.setFees_i(data.fees_i());
-        loanPrice.setPeriod_n(data.period_n());
-        loanPrice.setDate_start(data.date_start());
-        loanPrice.setPtax(data.ptax());
-        // Convertendo a moeda de string para a enum Currencies
+        loan.setLoanType(loanType);
+        loan.setAmount_pv(data.amount_pv());
+        loan.setFees_i(data.fees_i());
+        loan.setPeriod_n(data.period_n());
+        loan.setDate_start(data.date_start());
+        loan.setPtax(data.ptax());
+
         Currencies currency = Currencies.valueOf(String.valueOf(data.currency()));  // Conversão de string para enum
-        loanPrice.setCurrency(currency);
-        loanPrice.setDate_end(data.date_end());
-        loanPrice.setTotal_loan(data.total_loan());
-        loanPrice.setAmount_pv(data.amount_pv());
-        //loanPrice.setAmortization(data.amortization());
-        loanPrice.setAjustedAmount(data.ajustedAmount());
+        loan.setCurrency(currency);
+        loan.setDate_end(data.date_end());
+        loan.setTotal_loan(data.total_loan());
+        loan.setAmount_pv(data.amount_pv());
+
+        loan.setAjustedAmount(data.ajustedAmount());
 
         // Aqui você adiciona as parcelas ao LoanPrice
         if (data.installments() != null && !data.installments().isEmpty()) {
-            for (LoanInstallment installment : data.installments()) {
-                installment.setLoanPrice(loanPrice);  // Associando a parcela ao LoanPrice
+            for (InstallmentDTO installment : data.installments()) {
+                installment.setLoan(loan);
             }
-            loanPrice.setInstallments(data.installments());  // Setando as parcelas no LoanPrice
+            loan.setInstallments(data.installments());
         }
 
-        // Salvando o LoanPrice (as parcelas serão salvas automaticamente devido ao CascadeType.ALL)
-        loanRepository.save(loanPrice);  // O id será gerado automaticamente aqui
+
+        loanRepository.save(loan);  // O id será gerado automaticamente aqui
     }
 
     @PostMapping("/calculate-price")
-    public LoanPrice getPrice(@RequestBody @Valid DataGetPrice dataGetPrice) {
-        LoanPrice loanPrice = new LoanPrice();
+    public Loan getPrice(@RequestBody @Valid LoanDTO loanDTO) {
+        Loan loan = new Loan();
 
-        // Buscando o cliente pelo client_id
-        Client client = clientRepository.findById(dataGetPrice.client_id())
+
+        Client client = clientRepository.findById(loanDTO.client_id())
                 .orElseThrow(() -> new IllegalArgumentException("Cliente não encontrado"));
 
-        // Setando os dados do cliente e os outros dados da requisição
-        loanPrice.setClient_id(client);
-        loanPrice.setLoanType(dataGetPrice.loanType());
-        loanPrice.setAmount_pv(dataGetPrice.amount_pv());
-        loanPrice.setFees_i(dataGetPrice.fees_i());
-        loanPrice.setPeriod_n(dataGetPrice.period_n());
-        loanPrice.setDate_start(dataGetPrice.date_start());
-        loanPrice.setPtax(dataGetPrice.ptax());
-        loanPrice.setCurrency(dataGetPrice.currency());
 
-        // Calculando o preço do empréstimo
-        loanPrice.priceCalc();
+        loan.setClient(client);
+        loan.setLoanType(loanDTO.loanType());
+        loan.setAmount_pv(loanDTO.amount_pv());
+        loan.setFees_i(loanDTO.fees_i());
+        loan.setPeriod_n(loanDTO.period_n());
+        loan.setDate_start(loanDTO.date_start());
+        loan.setPtax(loanDTO.ptax());
+        loan.setCurrency(loanDTO.currency());
 
-        loanPrice.setId(0);  // Ou simplesmente não setar o id, dependendo da sua lógica, isso define o id como nulo.
 
-        return loanPrice;
+        loan.priceCalc();
+
+        loan.setId(0);
+
+        return loan;
+    }
+
+    @Transactional
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteLoan(@PathVariable long id) {
+
+        List<Loan> loans = loanRepository.findByClient_Id(id);
+
+        for (Loan loan : loans) {
+            installmentRepository.deleteByLoanId(id);
+        }
+
+        // Excluir os empréstimos
+        loanRepository.deleteById(id);
+
+        return ResponseEntity.ok().build();
     }
 }
+

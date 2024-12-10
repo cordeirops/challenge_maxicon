@@ -1,4 +1,4 @@
-package com.desafio.maxicon.challange.model.persistence;
+package com.desafio.maxicon.challange.model.client;
 
 import com.desafio.maxicon.challange.model.dto.ClientDTO;
 import jakarta.persistence.*;
